@@ -31,6 +31,12 @@ class AppConstants {
 
   // Formatos de fecha
   static final DateFormat dateFormat = DateFormat('dd/MM/yyyy');
+  static final DateFormat dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
+  static final NumberFormat currencyFormat = NumberFormat.currency(
+    locale: 'es_MX',
+    symbol: '\$',
+    decimalDigits: 2,
+  );
 }
 
 // Clase para gestionar la información de sesión del usuario

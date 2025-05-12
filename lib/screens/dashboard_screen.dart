@@ -7,11 +7,12 @@ import '../models/expense.dart';
 import '../utils/constants.dart';
 import '../widgets/expense_list.dart';
 import '../widgets/summary_card.dart';
+import '../widgets/category_filter.dart';
 import 'auth/login_screen.dart';
 import 'expense_form_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -20,8 +21,11 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final _databaseHelper = DatabaseHelper();
   List<Expense> _expenses = [];
+  List<Expense> _filteredExpenses = [];
   double _totalExpenses = 0;
+  double _filteredTotalExpenses = 0;
   bool _isLoading = true;
+  String? _selectedCategory;
 
   @override
   void initState() {
@@ -66,7 +70,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       setState(() {
         _expenses = expenses;
+        _filteredExpenses = expenses;
         _totalExpenses = totalExpenses;
+        _filteredTotalExpenses = totalExpenses;
         _isLoading = false;
       });
     } catch (e) {
@@ -82,6 +88,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
     }
+  }
+
+  void _filterExpensesByCategory(String? category) {
+    setState(() {
+      _selectedCategory = category;
+      
+      if (category == null) {
+        // Si no hay categoría seleccionada, mostrar todos los gastos
+        _filteredExpenses = _expenses;
+        _filteredTotalExpenses = _totalExpenses;
+      } else {
+        // Filtrar gastos por categoría seleccionada
+        _filteredExpenses = _expenses.where((expense) => expense.category == category).toList();
+        
+        // Calcular el total de gastos filtrados
+        _filteredTotalExpenses = _filteredExpenses.fold(
+          0, (sum, expense) => sum + expense.amount);
+      }
+    });
   }
 
   Future<void> _onEditExpense(Expense expense) async {
@@ -203,32 +228,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(height: 16),
                     SummaryCard(
-                      totalExpenses: _totalExpenses,
-                      totalTransactions: _expenses.length,
+                      totalExpenses: _filteredTotalExpenses,
+                      totalTransactions: _filteredExpenses.length,
                     ),
                     const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Transacciones recientes',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (_expenses.isNotEmpty)
-                          TextButton(
-                            onPressed: () {
-                              // Filtros adicionales o vista detallada (opcional)
-                            },
-                            child: const Text('Ver todo'),
-                          ),
-                      ],
+                    const Text(
+                      'Transacciones recientes',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    if (_expenses.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      CategoryFilter(
+                        categories: ExpenseCategories.categories,
+                        selectedCategory: _selectedCategory,
+                        onCategorySelected: _filterExpensesByCategory,
+                      ),
+                    ],
+                    const SizedBox(height: 16),
                     ExpenseList(
-                      expenses: _expenses,
+                      expenses: _filteredExpenses,
                       onEditExpense: _onEditExpense,
                       onDeleteExpense: _onDeleteExpense,
                     ),
